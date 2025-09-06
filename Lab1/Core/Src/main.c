@@ -92,8 +92,19 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  int pressed = 0;
   while (1)
   {
+    pressed = HAL_GPIO_ReadPin(B1_GPIO_Port,B1_Pin);
+    if(pressed){
+      HAL_GPIO_WritePin(LD4_GPIO_Port,LD4_Pin,GPIO_PIN_SET);
+    }
+    else{
+      GPIO_TypeDef* ld4_gpio    = GPIOB; // wrong
+      uint16_t      ld4_pin_nbr = 13;    // wrong
+      uint16_t      ld4_pin    = 0x01 << ld4_pin_nbr;
+      HAL_GPIO_WritePin(ld4_gpio,ld4_pin,GPIO_PIN_RESET);
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

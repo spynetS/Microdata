@@ -23,6 +23,18 @@
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 
+
+uint8_t die_value = -1;
+
+const uint16_t sseg[10] = {0x0, 0x06, 0x09b, 0x08f,0x0c6,0x0cd,0x0dd,0x07,0x0df,0x0cf};
+const uint16_t sseg_err = 0x1ac;
+
+void set_led_dice(int die_value);
+void put_on_sseg(uint8_t dec_nbr);
+void reset_diodes();
+void reset_sseg();
+int is_blue_button_pressed();
+
 int is_blue_button_pressed(){
 	uint32_t reg_read = GPIOC->IDR;
 	// we look at the first bit in the reg_variable
@@ -30,20 +42,8 @@ int is_blue_button_pressed(){
 }
 
 
-uint8_t die_value = -1;
-int is_rolling = 0;
-
-
 void set_led_dice(int die_value){
-  HAL_GPIO_WritePin(GPIOA,DI_A_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOA,DI_B_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOA,DI_C_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOA,DI_D_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOA,DI_E_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOA,DI_F_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOA,DI_G_Pin, GPIO_PIN_RESET);
 
-  if(!is_rolling){
   switch(die_value){
     case 0:
       HAL_GPIO_WritePin(GPIOA,DI_D_Pin, GPIO_PIN_SET);
@@ -80,19 +80,26 @@ void set_led_dice(int die_value){
       HAL_GPIO_WritePin(GPIOA,DI_G_Pin, GPIO_PIN_SET);
       break;
   }
-  }
 }
 
 
-const uint16_t sseg[10] = {0x0, 0x06, 0x09b, 0x08f,0x0c6,0x0cd,0x0dd,0x07,0x0df,0x0cf};
-const uint16_t sseg_err = 0x1ac;
-
 void put_on_sseg(uint8_t dec_nbr){
-  GPIO_TypeDef* gpio = GPIOC;
-  for(int i =0; i < 9; i ++){
-	  GPIOC->BRR = 0x01 << i;
-  }
   GPIOC->BSRR = sseg[dec_nbr+1];
+}
+void reset_diodes(){
+	HAL_GPIO_WritePin(GPIOA,DI_A_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA,DI_B_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA,DI_C_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA,DI_D_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA,DI_E_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA,DI_F_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA,DI_G_Pin, GPIO_PIN_RESET);
+
+}
+void reset_sseg(){
+	for(int i =0; i < 9; i ++){
+		GPIOC->BRR = 0x01 << i;
+	}
 }
 
 int main(void)
@@ -104,16 +111,19 @@ int main(void)
   int pressed = 0;
   while (1)
   {
-  	put_on_sseg(die_value);
     pressed = is_blue_button_pressed();
     if(pressed){
-    	is_rolling = 1;
+    	// we we are holding we reset and increase the die value
+    	reset_sseg();
+    	reset_diodes();
     	die_value = (die_value + 1) % 6;
     }
-    else{
-    	is_rolling = 0;
+    // if we arent rolling we display the die value
+    if(!pressed){
+    	put_on_sseg(die_value);
+    	set_led_dice(die_value);
     }
-    set_led_dice(die_value);
+
 
     HAL_Delay(1);
   }

@@ -18,93 +18,104 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdint.h>
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-/* USER CODE BEGIN PFP */
 
-/* USER CODE END PFP */
+int is_blue_button_pressed(){
+	uint32_t reg_read = GPIOC->IDR;
+	// we look at the first bit in the reg_variable
+	return reg_read & (0x01 << 13);
+}
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
 
-/* USER CODE END 0 */
+uint8_t die_value = -1;
+int is_rolling = 0;
 
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
+
+void set_led_dice(int die_value){
+  HAL_GPIO_WritePin(GPIOA,DI_A_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA,DI_B_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA,DI_C_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA,DI_D_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA,DI_E_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA,DI_F_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA,DI_G_Pin, GPIO_PIN_RESET);
+
+  if(!is_rolling){
+  switch(die_value){
+    case 0:
+      HAL_GPIO_WritePin(GPIOA,DI_D_Pin, GPIO_PIN_SET);
+      break;
+    case 1:
+      HAL_GPIO_WritePin(GPIOA,DI_E_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_C_Pin, GPIO_PIN_SET);
+      break;
+    case 2:
+      HAL_GPIO_WritePin(GPIOA,DI_D_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_E_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_C_Pin, GPIO_PIN_SET);
+      break;
+    case 3:
+      HAL_GPIO_WritePin(GPIOA,DI_E_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_C_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_A_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_G_Pin, GPIO_PIN_SET);
+      break;
+    case 4:
+      HAL_GPIO_WritePin(GPIOA,DI_D_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_E_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_C_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_A_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_G_Pin, GPIO_PIN_SET);
+
+      break;
+    case 5:
+      HAL_GPIO_WritePin(GPIOA,DI_E_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_C_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_A_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_B_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_F_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(GPIOA,DI_G_Pin, GPIO_PIN_SET);
+      break;
+  }
+  }
+}
+
+
+const uint16_t sseg[10] = {0x0, 0x06, 0x09b, 0x08f,0x0c6,0x0cd,0x0dd,0x07,0x0df,0x0cf};
+const uint16_t sseg_err = 0x1ac;
+
+void put_on_sseg(uint8_t dec_nbr){
+  GPIO_TypeDef* gpio = GPIOC;
+
+  gpio->BSRR = (uint32_t)sseg[dec_nbr];
+
+}
+
 int main(void)
 {
-
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
-  SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
+   HAL_Init();
+   SystemClock_Config();
+   MX_GPIO_Init();
 
   int pressed = 0;
   while (1)
   {
-    pressed = HAL_GPIO_ReadPin(B1_GPIO_Port,B1_Pin);
+  	put_on_sseg(1);
+    pressed = is_blue_button_pressed();
     if(pressed){
-      HAL_GPIO_WritePin(LD4_GPIO_Port,LD4_Pin,GPIO_PIN_SET);
+    	is_rolling = 1;
+    	die_value = (die_value + 1) % 6;
     }
     else{
-      GPIO_TypeDef* ld4_gpio    = GPIOB; // wrong
-      uint16_t      ld4_pin_nbr = 13;    // wrong
-      uint16_t      ld4_pin    = 0x01 << ld4_pin_nbr;
-      HAL_GPIO_WritePin(ld4_gpio,ld4_pin,GPIO_PIN_RESET);
+    	is_rolling = 0;
     }
-    /* USER CODE END WHILE */
+    set_led_dice(die_value);
 
-    /* USER CODE BEGIN 3 */
+
   }
-  /* USER CODE END 3 */
 }
 
 /**

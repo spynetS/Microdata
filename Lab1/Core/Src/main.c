@@ -89,9 +89,10 @@ const uint16_t sseg_err = 0x1ac;
 
 void put_on_sseg(uint8_t dec_nbr){
   GPIO_TypeDef* gpio = GPIOC;
-
-  gpio->BSRR = (uint32_t)sseg[dec_nbr];
-
+  for(int i =0; i < 9; i ++){
+	  GPIOC->BRR = 0x01 << i;
+  }
+  GPIOC->BSRR = sseg[dec_nbr+1];
 }
 
 int main(void)
@@ -103,7 +104,7 @@ int main(void)
   int pressed = 0;
   while (1)
   {
-  	put_on_sseg(1);
+  	put_on_sseg(die_value);
     pressed = is_blue_button_pressed();
     if(pressed){
     	is_rolling = 1;
@@ -114,7 +115,7 @@ int main(void)
     }
     set_led_dice(die_value);
 
-
+    HAL_Delay(1);
   }
 }
 
@@ -186,6 +187,11 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, SSEG_A_Pin|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
+                          |GPIO_PIN_4|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8
+                          |GPIO_PIN_9, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, DI_A_Pin|DI_B_Pin|SMPS_EN_Pin|SMPS_V1_Pin
                           |SMPS_SW_Pin|DI_C_Pin|DI_D_Pin|DI_E_Pin
                           |DI_F_Pin|DI_G_Pin, GPIO_PIN_RESET);
@@ -198,6 +204,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SSEG_A_Pin PC1 PC2 PC3
+                           PC4 PC6 PC7 PC8
+                           PC9 */
+  GPIO_InitStruct.Pin = SSEG_A_Pin|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
+                          |GPIO_PIN_4|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8
+                          |GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : DI_A_Pin DI_B_Pin SMPS_EN_Pin SMPS_V1_Pin
                            SMPS_SW_Pin DI_C_Pin DI_D_Pin DI_E_Pin

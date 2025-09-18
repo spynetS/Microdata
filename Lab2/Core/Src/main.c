@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdint.h>
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -68,23 +70,41 @@ typedef enum state{
   s_all_stop,
   s_p_go,
   s_cars_wait,
+  s_all_stop_2
+
 } State;
 
 
 const uint16_t lights_pins[] = {
   0b11111,
-  0b00110,
+  0b01100,
   0b01010,
-  0b10010,
-  0b10010,
+  0b01001,
+  0b01001,
   0b10001,
-  0b01010
+  0b01011,
+  0b01001
 };
+
+int is_blue_button_pressed(){
+	uint32_t reg_read = GPIOC->IDR;
+	// we look at the first bit in the reg_variable
+	return reg_read & (0x01 << 13);
+}
+
 
 void set_traffic_lights(State st)
 {
-	//GC_GPIO_Port->BRR = 0b0;
+	//int light = HAL_GPIO_ReadPin(PD_GPIO_Port, PD_Pin_Port);
+	GC_GPIO_Port->BRR = 0b11111;
 	GC_GPIO_Port->BSRR = lights_pins[st];
+}
+
+void push_button_light_on(){
+  HAL_GPIO_WritePin(PD_GPIO_Port, PD_Pin, GPIO_PIN_SET);
+}
+void push_button_light_off(){
+	  HAL_GPIO_WritePin(PD_GPIO_Port, PD_Pin, GPIO_PIN_RESET);
 }
 /* USER CODE END 0 */
 
@@ -119,6 +139,13 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  State state = s_init;
+  Event event = ev_none;
+
+  int curr_pressed = is_blue_button_pressed();
+  int last_pressed = curr_pressed;
+
+  uint32_t ticks_left_in_state = 0, curr_tick = 0, last_tick = 0;
 
   /* USER CODE END 2 */
 
@@ -126,8 +153,83 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    State next_state = state;
+    event = ev_none;
+
+    curr_tick = HAL_GetTick();
+    // push handler
+    curr_pressed = is_blue_button_pressed();
+    if(curr_pressed && !last_pressed){
+      event = ev_button_push;
+    }
+    last_pressed = curr_pressed;
+
+    // tick handler
+    if(ticks_left_in_state > 0){
+      ticks_left_in_state  = ticks_left_in_state - (curr_tick-last_tick);
+      if (ticks_left_in_state == 0){
+        event = ev_state_timeout;
+      }
+    }
+    last_tick = curr_tick;
+
+
+    switch(event){
+      case ev_none:
+        break;
+      case ev_button_push:
+
+        switch(state){
+          case s_init:
+            next_state = s_car_go;
+            break;
+          case s_car_go:
+            ticks_left_in_state = 2000;
+            next_state = s_pushed_wait;
+            push_button_light_on();
+            break;
+          default:
+            next_state = state;
+            break;
+        }
+        break;
+      case ev_state_timeout:
+        switch(state){
+          case s_pushed_wait:
+            ticks_left_in_state = 1000;
+            next_state = s_cars_stopping;
+            break;
+          case s_cars_stopping:
+            ticks_left_in_state = 1000;
+            next_state = s_all_stop;
+            push_button_light_off();
+
+            break;
+          case s_all_stop:
+            ticks_left_in_state = 3000;
+            next_state = s_p_go;
+            break;
+          case s_p_go:
+            ticks_left_in_state = 1000;
+            next_state = s_all_stop_2;
+            break;
+          case s_all_stop_2:
+            next_state = s_cars_wait;
+            ticks_left_in_state = 1000;
+            break;
+          case s_cars_wait:
+            next_state = s_car_go;
+            ticks_left_in_state = 1000;
+            break;
+        }
+        break;
+    }
+    // switch state
+    state = next_state;
+	set_traffic_lights(state);
+
     /* USER CODE END WHILE */
-	  set_traffic_lights(s_car_go);
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -236,8 +338,8 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, RC_Pin|YC_Pin|GC_Pin|RP_Pin
-                          |GP_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, RP_Pin|GP_Pin|RC_Pin|YC_Pin
+                          |GC_Pin|PD_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, SMPS_EN_Pin|SMPS_V1_Pin|SMPS_SW_Pin, GPIO_PIN_RESET);
@@ -251,10 +353,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : RC_Pin YC_Pin GC_Pin RP_Pin
-                           GP_Pin */
-  GPIO_InitStruct.Pin = RC_Pin|YC_Pin|GC_Pin|RP_Pin
-                          |GP_Pin;
+  /*Configure GPIO pins : RP_Pin GP_Pin RC_Pin YC_Pin
+                           GC_Pin PD_Pin */
+  GPIO_InitStruct.Pin = RP_Pin|GP_Pin|RC_Pin|YC_Pin
+                          |GC_Pin|PD_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

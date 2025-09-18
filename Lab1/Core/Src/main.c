@@ -24,10 +24,10 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 
 
-uint8_t die_value = -1;
+uint8_t die_value = 6;
 
-const uint16_t sseg[10] = {0x0, 0x06, 0x09b, 0x08f,0x0c6,0x0cd,0x0dd,0x07,0x0df,0x0cf};
-const uint16_t sseg_err = 0x1ac;
+const uint16_t sseg[10] = {0x000, 0x006, 0x09b, 0x08f,0x0c6,0x0cd,0x0dd,0x07,0x0df,0x0cf};
+const uint16_t sseg_err = 0x200;
 
 void set_led_dice(int die_value);
 void put_on_sseg(uint8_t dec_nbr);
@@ -84,8 +84,12 @@ void set_led_dice(int die_value){
 
 
 void put_on_sseg(uint8_t dec_nbr){
-  GPIOC->BSRR = sseg[dec_nbr+1];
+	if(dec_nbr > 5){
+		reset_sseg();
+	}
+	GPIOC->BSRR = sseg[dec_nbr+1];
 }
+
 void reset_diodes(){
 	HAL_GPIO_WritePin(GPIOA,DI_A_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA,DI_B_Pin, GPIO_PIN_RESET);

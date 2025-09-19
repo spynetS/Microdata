@@ -69,6 +69,8 @@ void Error_Handler(void);
 #define RC_GPIO_Port GPIOC
 #define YC_Pin GPIO_PIN_3
 #define YC_GPIO_Port GPIOC
+#define BLINK_Pin GPIO_PIN_0
+#define BLINK_GPIO_Port GPIOA
 #define USART_TX_Pin GPIO_PIN_2
 #define USART_TX_GPIO_Port GPIOA
 #define USART_RX_Pin GPIO_PIN_3

@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include <stdint.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -87,24 +86,24 @@ const uint16_t lights_pins[] = {
 };
 
 int is_blue_button_pressed(){
-	uint32_t reg_read = GPIOC->IDR;
-	// we look at the first bit in the reg_variable
-	return reg_read & (0x01 << 13);
+  uint32_t reg_read = GPIOC->IDR;
+  // we look at the first bit in the reg_variable
+  return reg_read & (0x01 << 13);
 }
 
 
 void set_traffic_lights(State st)
 {
-	//int light = HAL_GPIO_ReadPin(PD_GPIO_Port, PD_Pin_Port);
-	GC_GPIO_Port->BRR = 0b11111;
-	GC_GPIO_Port->BSRR = lights_pins[st];
+  //int light = HAL_GPIO_ReadPin(PD_GPIO_Port, PD_Pin_Port);
+  GC_GPIO_Port->BRR = 0b11111;
+  GC_GPIO_Port->BSRR = lights_pins[st];
 }
 
 void push_button_light_on(){
   HAL_GPIO_WritePin(PD_GPIO_Port, PD_Pin, GPIO_PIN_SET);
 }
 void push_button_light_off(){
-	  HAL_GPIO_WritePin(PD_GPIO_Port, PD_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(PD_GPIO_Port, PD_Pin, GPIO_PIN_RESET);
 }
 /* USER CODE END 0 */
 
@@ -146,7 +145,8 @@ int main(void)
   int last_pressed = curr_pressed;
 
   uint32_t ticks_left_in_state = 0, curr_tick = 0, last_tick = 0;
-
+  uint32_t blink_ticks = 100;
+  int blink_state = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -171,12 +171,33 @@ int main(void)
         event = ev_state_timeout;
       }
     }
-    last_tick = curr_tick;
 
 
     switch(event){
       case ev_none:
-        break;
+          switch(state){
+            case s_p_go:
+              if(blink_ticks > 0 ){
+                blink_ticks -= (curr_tick-last_tick);
+              }
+              else{
+                HAL_GPIO_WritePin(BLINK_GPIO_Port, BLINK_Pin, blink_state ? GPIO_PIN_SET : GPIO_PIN_RESET);
+                blink_state = blink_state ? 0 : 1;
+                blink_ticks = 200;
+              }
+              break;
+            default:
+              if(blink_ticks > 0 ){
+                blink_ticks -= (curr_tick-last_tick);
+              }
+              else{
+                HAL_GPIO_WritePin(BLINK_GPIO_Port, BLINK_Pin, blink_state ? GPIO_PIN_SET : GPIO_PIN_RESET);
+                blink_state = blink_state ? 0 : 1;
+                blink_ticks = 700;
+              }
+              break;
+          }
+          break;
       case ev_button_push:
 
         switch(state){
@@ -221,12 +242,16 @@ int main(void)
             next_state = s_car_go;
             ticks_left_in_state = 1000;
             break;
+          default:
+            break;
         }
         break;
     }
     // switch state
     state = next_state;
-	set_traffic_lights(state);
+    set_traffic_lights(state);
+    // save last tick
+    last_tick = curr_tick;
 
     /* USER CODE END WHILE */
 
@@ -339,10 +364,10 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, RP_Pin|GP_Pin|RC_Pin|YC_Pin
-                          |GC_Pin|PD_Pin, GPIO_PIN_RESET);
+                          |GC_Pin|PD_Pin|GPIO_PIN_7, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SMPS_EN_Pin|SMPS_V1_Pin|SMPS_SW_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, BLINK_Pin|SMPS_EN_Pin|SMPS_V1_Pin|SMPS_SW_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
@@ -354,16 +379,16 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : RP_Pin GP_Pin RC_Pin YC_Pin
-                           GC_Pin PD_Pin */
+                           GC_Pin PD_Pin PC7 */
   GPIO_InitStruct.Pin = RP_Pin|GP_Pin|RC_Pin|YC_Pin
-                          |GC_Pin|PD_Pin;
+                          |GC_Pin|PD_Pin|GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SMPS_EN_Pin SMPS_V1_Pin SMPS_SW_Pin */
-  GPIO_InitStruct.Pin = SMPS_EN_Pin|SMPS_V1_Pin|SMPS_SW_Pin;
+  /*Configure GPIO pins : BLINK_Pin SMPS_EN_Pin SMPS_V1_Pin SMPS_SW_Pin */
+  GPIO_InitStruct.Pin = BLINK_Pin|SMPS_EN_Pin|SMPS_V1_Pin|SMPS_SW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

@@ -59,6 +59,7 @@ typedef enum event {
   ev_none,
   ev_button_push,
   ev_state_timeout,
+  ev_error = -99
 } Event;
 
 typedef enum state{
@@ -73,7 +74,6 @@ typedef enum state{
 
 } State;
 
-
 const uint16_t lights_pins[] = {
   0b11111,
   0b01100,
@@ -84,6 +84,55 @@ const uint16_t lights_pins[] = {
   0b01011,
   0b01001
 };
+
+#define EVQ_SIZE 10
+
+uint32_t ticks_left_in_state = 0, curr_tick = 0, last_tick = 0;
+
+Event evq [ EVQ_SIZE ];
+int evq_count    = 0;
+int evq_front_ix = 0;
+int evq_rear_ix  = 0;
+
+void evq_init(){
+  for(int i = 0; i < EVQ_SIZE; i++){
+    evq[i] = ev_error;
+  }
+}
+
+void evq_push_back(Event e){
+  if(evq_count + 1 > EVQ_SIZE) return; // we ignore if we are full
+  evq[evq_rear_ix] = e;
+  evq_rear_ix = (evq_rear_ix + 1) % EVQ_SIZE;
+  evq_count ++;
+}
+
+Event evq_pop_front(){
+  if(evq_count <= 0) return ev_none;
+
+  Event e = evq[evq_front_ix];
+  evq[evq_front_ix] = ev_error;
+  evq_front_ix = (evq_front_ix + 1) % EVQ_SIZE;
+  evq_count --;
+  return e;
+}
+
+void HAL_GPIO_EXTI_Callback( uint16_t GPIO_Pin ){
+  if(GPIO_Pin == B1_Pin){
+    evq_push_back(ev_button_push);
+  }
+}
+
+
+void my_systick_handler(){
+
+  if(ticks_left_in_state <= 0){
+    evq_push_back(ev_state_timeout);
+  }
+  else{
+    ticks_left_in_state --;
+  }
+}
 
 int is_blue_button_pressed(){
   uint32_t reg_read = GPIOC->IDR;
@@ -144,7 +193,7 @@ int main(void)
   int curr_pressed = is_blue_button_pressed();
   int last_pressed = curr_pressed;
 
-  uint32_t ticks_left_in_state = 0, curr_tick = 0, last_tick = 0;
+
   uint32_t blink_ticks = 100;
   int blink_state = 0;
   /* USER CODE END 2 */
@@ -154,24 +203,9 @@ int main(void)
   while (1)
   {
     State next_state = state;
-    event = ev_none;
+    event = evq_pop_front();
 
     curr_tick = HAL_GetTick();
-    // push handler
-    curr_pressed = is_blue_button_pressed();
-    if(curr_pressed && !last_pressed){
-      event = ev_button_push;
-    }
-    last_pressed = curr_pressed;
-
-    // tick handler
-    if(ticks_left_in_state > 0){
-      ticks_left_in_state  = ticks_left_in_state - (curr_tick-last_tick);
-      if (ticks_left_in_state == 0){
-        event = ev_state_timeout;
-      }
-    }
-
 
     switch(event){
       case ev_none:
@@ -406,6 +440,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD4_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

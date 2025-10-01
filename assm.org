@@ -1,0 +1,5 @@
+#+title: Assm
+
+* Core registers
+** Subtrcting
+17-9

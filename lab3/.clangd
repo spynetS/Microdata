@@ -1,0 +1,14 @@
+CompileFlags:
+  Add:
+    - "-I./Core/Inc"
+    - "-I./Drivers/STM32L4xx_HAL_Driver/Inc"
+    - "-I./Drivers/STM32L4xx_HAL_Driver/Inc/Legacy"
+    - "-I./Drivers/CMSIS/Device/ST/STM32L4xx/Include"
+    - "-I./Drivers/CMSIS/Include"
+    - "-DDEBUG"
+    - "-DUSE_HAL_DRIVER"
+    - "-DSTM32L433xx"
+    - "-mcpu=cortex-m4"
+    - "-mthumb"
+    - "-mfpu=fpv4-sp-d16"
+    - "-mfloat-abi=hard"

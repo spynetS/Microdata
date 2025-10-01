@@ -37,6 +37,15 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
+struct clock_data {
+	uint8_t hrs;
+	uint8_t min;
+	uint8_t sec;
+};
+
+void cd_set(struct clock_data* pcd, uint8_t hrs, uint8_t min, uint8_t sec);
+void cd_tick(struct clock_data* pcd);
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

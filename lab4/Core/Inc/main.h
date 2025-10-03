@@ -45,6 +45,8 @@ struct clock_data {
 
 void cd_set(struct clock_data* pcd, uint8_t hrs, uint8_t min, uint8_t sec);
 void cd_tick(struct clock_data* pcd);
+void uart_print_cd(UART_HandleTypeDef * huart,
+struct clock_data * pcd);
 
 /* USER CODE END ET */
 

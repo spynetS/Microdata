@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "../Inc/lcd.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -29,6 +30,34 @@
 uint32_t ticks = 0;
 uint32_t time = 0;
 int elapsed = 0;
+
+
+
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
+
+TIM_HandleTypeDef htim6;
+
+UART_HandleTypeDef huart2;
+
+/* USER CODE BEGIN PV */
+void uart_print(const char* str){
+  HAL_UART_Transmit(&huart2, (uint8_t *) str, strlen(str), 255);
+}
+
 
 void cd_set(struct clock_data* pcd, uint8_t hrs, uint8_t min, uint8_t sec){
   pcd->hrs = hrs;
@@ -46,6 +75,13 @@ void cd_tick(struct clock_data *pcd){
   pcd->sec = s;
 }
 
+void uart_print_cd(UART_HandleTypeDef * huart,
+                   struct clock_data * pcd) {
+  char str[256];
+  sprintf(str,"\r%d:%d:%d",pcd->hrs, pcd->min, pcd->sec);
+  uart_print(str);
+
+}
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
@@ -78,28 +114,6 @@ void wait_for_button_press() {
         last_pressed = button_pressed;
     }
 }
-
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-I2C_HandleTypeDef hi2c1;
-
-TIM_HandleTypeDef htim6;
-
-UART_HandleTypeDef huart2;
-
-/* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
 
@@ -160,35 +174,31 @@ int main(void)
   TextLCDType lcd;
   TextLCD_Init(&lcd,&hi2c1, 0x4E);
 
-  TextLCD_PutChar(&lcd, 'H');
-  TextLCD_Position(&lcd, 1, 0);
-  TextLCD_PutChar(&lcd, 'E');
-  HAL_Delay(1000);
-  TextLCD_Clear(&lcd);
-
-  TextLCD_PutStr(&lcd, "HELLO WORLD!");
-  HAL_Delay(1000);
-  TextLCD_Position(&lcd, 0, 0);
-  TextLCD_PutChar(&lcd, 'X');
-
-
+  char c = 0;
+  const char ASCII_CAPITAL_OFFSET = 'a';
+  const char LETTERS_TOTAL = 'Z'-'A';
 
   /* USER CODE END 2 */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
 
   while (1)
   {
-    if(elapsed){
-      elapsed = 0;
-      HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
-      cd_tick(&clock);
-    }
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    //wait_for_button_press();
+    //TextLCD_PutChar(&lcd, c+ASCII_CAPITAL_OFFSET);
+    //c = (c+1) % LETTERS_TOTAL;
+
+    if(elapsed){
+      elapsed = 0;
+      cd_tick(&clock);
+      uart_print_cd(&huart2, &clock);
+    }
+
   }
   /* USER CODE END 3 */
 }

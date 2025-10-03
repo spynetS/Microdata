@@ -17,20 +17,69 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include "../Inc/main.h"
+#include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "../Inc/lcd.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+uint32_t ticks = 0;
+uint32_t time = 0;
+int elapsed = 0;
+
 void cd_set(struct clock_data* pcd, uint8_t hrs, uint8_t min, uint8_t sec){
   pcd->hrs = hrs;
   pcd->min = min;
   pcd->sec = sec;
 }
+
+void cd_tick(struct clock_data *pcd){
+  int h = time/3600;
+  int m = (time-h*3600)/60;
+  int s = (time-h*3600-m*60);
+
+  pcd->hrs = h;
+  pcd->min = m;
+  pcd->sec = s;
+}
+
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+
+  // 2 Hz, each tick is 1/2 second.
+  // when the ticks are even a second has passed
+
+  if(htim->Instance == TIM6){
+    ticks++;
+    if(ticks%2==0){
+      time++;
+      if (time >= 86400){
+        time = 0;
+      }
+    }
+    elapsed = 1;
+  }
+}
+int last_pressed = 0;
+
+void wait_for_button_press() {
+    while (1) {
+        int button_pressed = HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin);
+
+        if (!button_pressed && last_pressed) {
+            // Button was pressed, now released
+            last_pressed = button_pressed;
+            break;
+        }
+
+        last_pressed = button_pressed;
+    }
+}
+
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -44,6 +93,8 @@ void cd_set(struct clock_data* pcd, uint8_t hrs, uint8_t min, uint8_t sec){
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
+
 TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart2;
@@ -57,6 +108,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -97,20 +149,43 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_TIM6_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
 
   struct clock_data clock;
   cd_set(&clock, 23, 59, 45);
 
+  HAL_TIM_Base_Start_IT(&htim6);
+  TextLCDType lcd;
+  TextLCD_Init(&lcd,&hi2c1, 0x4E);
+
+  TextLCD_PutChar(&lcd, 'H');
+  TextLCD_Position(&lcd, 1, 0);
+  TextLCD_PutChar(&lcd, 'E');
+  HAL_Delay(1000);
+  TextLCD_Clear(&lcd);
+
+  TextLCD_PutStr(&lcd, "HELLO WORLD!");
+  HAL_Delay(1000);
+  TextLCD_Position(&lcd, 0, 0);
+  TextLCD_PutChar(&lcd, 'X');
+
 
 
   /* USER CODE END 2 */
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+
   while (1)
   {
+    if(elapsed){
+      elapsed = 0;
+      HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
+      cd_tick(&clock);
+    }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -165,6 +240,54 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x10D19CE4;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Analogue filter
+  */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
 }
 
 /**

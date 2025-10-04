@@ -78,7 +78,7 @@ void cd_tick(struct clock_data *pcd){
 void uart_print_cd(UART_HandleTypeDef * huart,
                    struct clock_data * pcd) {
   char str[256];
-  sprintf(str,"\r%d:%d:%d",pcd->hrs, pcd->min, pcd->sec);
+  sprintf(str,"\r%02d:%02d:%02d",pcd->hrs, pcd->min, pcd->sec);
   uart_print(str);
 
 }
@@ -183,15 +183,14 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    //wait_for_button_press();
-    //TextLCD_PutChar(&lcd, c+ASCII_CAPITAL_OFFSET);
-    //c = (c+1) % LETTERS_TOTAL;
+    wait_for_button_press();
+    TextLCD_PutChar(&lcd, c+ASCII_CAPITAL_OFFSET);
+    c = (c+1) % LETTERS_TOTAL;
 
     if(elapsed){
       elapsed = 0;

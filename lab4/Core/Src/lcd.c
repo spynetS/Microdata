@@ -1,6 +1,6 @@
 #include "lcd.h"
 #include <string.h>
-
+#include "main.h"
 // first:   D7 D6 D5 D4 BT E  RW RS
 // second:  D3 D2 D1 D0 BT E  RW RS
 
@@ -11,7 +11,14 @@
  */
 void My_Delay(uint32_t mysec)
 {
-	HAL_Delay( 1 + (mysec / 1000) );
+
+	TIM2->CR1 &= ~(1 << 0);
+	TIM2->CR1 |= (1 << 0);
+	while(TIM2->CNT < mysec){
+
+	}
+	TIM2->CR1 &= ~(1 << 0);
+
 }
 
 #define BIT_BT   0x08

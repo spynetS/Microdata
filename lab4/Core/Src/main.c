@@ -181,12 +181,6 @@ int main(void)
   const char LETTERS_TOTAL = 'Z'-'A';
 
 
-  for(int i = 0; i < 5; i ++){
-	  HAL_Delay(1000);
-	  TextLCD_PutChar(&lcd, c+ASCII_CAPITAL_OFFSET);
-	  c = (c+1) % LETTERS_TOTAL;
-  }
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -197,16 +191,24 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // wait_for_button_press();
+    #if 0
+    wait_for_button_press();
     TextLCD_PutChar(&lcd, c+ASCII_CAPITAL_OFFSET);
     c = (c+1) % LETTERS_TOTAL;
+    #endif
+
 
     if(elapsed){
       elapsed = 0;
       cd_tick(&clock);
       uart_print_cd(&huart2, &clock);
+      char str[256];
+      sprintf(str,"%02d:%02d:%02d",clock.hrs, clock.min, clock.sec);
+      TextLCD_Home(&lcd);
+      TextLCD_PutStr(&lcd, str);
+
     }
-    My_Delay(1000*1000);
+    //HAL_Delay(1000);
 
   }
   /* USER CODE END 3 */
@@ -330,7 +332,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 79;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 0;
+  htim2.Init.Period = 4294967295;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)

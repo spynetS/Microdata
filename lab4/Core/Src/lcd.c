@@ -1,6 +1,7 @@
 #include "lcd.h"
 #include <string.h>
 #include "main.h"
+#include <stdio.h>
 // first:   D7 D6 D5 D4 BT E  RW RS
 // second:  D3 D2 D1 D0 BT E  RW RS
 
@@ -12,13 +13,11 @@
 void My_Delay(uint32_t mysec)
 {
 
-	TIM2->CR1 &= ~(1 << 0);
-	TIM2->CR1 |= (1 << 0);
-	while(TIM2->CNT < mysec){
-
-	}
-	TIM2->CR1 &= ~(1 << 0);
-
+	//TIM2->CR1 &= ~(1 << 0);// stop timer
+	TIM2->CNT = 0; // reset counter
+	TIM2->CR1 |= (1 << 0); // start timer
+	while(TIM2->CNT < mysec){} // run untill the count has counted enough
+	TIM2->CR1 &= ~(1 << 0); // stop timer
 }
 
 #define BIT_BT   0x08
@@ -162,7 +161,7 @@ void TextLCD_PutChar	(TextLCDType * hlcd, char c)
 {
 	uint8_t data = c;
 	TextLCD_SendByte(hlcd,data, GPIO_PIN_SET);
-	My_Delay(50); // neds 37us
+	My_Delay(50); // needs 37us
 }
 
 

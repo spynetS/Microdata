@@ -16,7 +16,9 @@ void My_Delay(uint32_t mysec)
 	//TIM2->CR1 &= ~(1 << 0);// stop timer
 	TIM2->CNT = 0; // reset counter
 	TIM2->CR1 |= (1 << 0); // start timer
-	while(TIM2->CNT < mysec){} // run untill the count has counted enough
+	while(TIM2->CNT < mysec){
+
+	} // run untill the count has counted enough
 	TIM2->CR1 &= ~(1 << 0); // stop timer
 }
 

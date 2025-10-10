@@ -53,7 +53,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+uint16_t read_one_adc_value(ADC_HandleTypeDef *hadc);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -61,6 +61,8 @@ void Error_Handler(void);
 #define B1_GPIO_Port GPIOC
 #define MCO_Pin GPIO_PIN_0
 #define MCO_GPIO_Port GPIOH
+#define A_IN_Pin GPIO_PIN_0
+#define A_IN_GPIO_Port GPIOC
 #define USART_TX_Pin GPIO_PIN_2
 #define USART_TX_GPIO_Port GPIOA
 #define USART_RX_Pin GPIO_PIN_3

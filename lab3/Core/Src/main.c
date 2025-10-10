@@ -71,7 +71,11 @@ uint16_t last_tick = 0;
 int unhandled_exti = 0;
 int pressed;
 
+#if 1
+uint32_t time = 86385;
+#else
 uint32_t time = 0;
+#endif
 uint32_t ticks = 0;
 
 void dispay_time(uint32_t ticks, uint32_t time){

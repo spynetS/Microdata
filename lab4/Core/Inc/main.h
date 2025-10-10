@@ -3,7 +3,7 @@
   ******************************************************************************
   * @file           : main.h
   * @brief          : Header for main.c file.
-  *                   This file contains the common defines of the application.
+  *                   This file contains the common defines of the applic30ation.
   ******************************************************************************
   * @attention
   *
@@ -41,6 +41,9 @@ struct clock_data {
 	uint8_t hrs;
 	uint8_t min;
 	uint8_t sec;
+	uint32_t time;
+	uint32_t tick;
+
 };
 
 void cd_set(struct clock_data* pcd, uint8_t hrs, uint8_t min, uint8_t sec);

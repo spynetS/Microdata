@@ -61,15 +61,27 @@ void uart_print(const char* str){
 
 
 void cd_set(struct clock_data* pcd, uint8_t hrs, uint8_t min, uint8_t sec){
+  pcd->time = hrs*3600 + min * 60 + sec;
+  pcd->tick = 0;
+
   pcd->hrs = hrs;
   pcd->min = min;
   pcd->sec = sec;
 }
 
 void cd_tick(struct clock_data *pcd){
-  int h = time/3600;
-  int m = (time-h*3600)/60;
-  int s = (time-h*3600-m*60);
+  pcd->tick++;
+  if(pcd->tick%2==0){
+      pcd->time ++;
+g
+    if (pcd->time >= 86400){
+      pcd->time = 0;
+    }
+  }
+
+  int h = pcd->time/3600;
+  int m = (pcd->time-h*3600)/60;
+  int s = (pcd->time-h*3600-m*60);
 
   pcd->hrs = h;
   pcd->min = m;
@@ -90,13 +102,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
   // when the ticks are even a second has passed
 
   if(htim->Instance == TIM6){
-    ticks++;
-    if(ticks%2==0){
-      time++;
-      if (time >= 86400){
-        time = 0;
-      }
-    }
     elapsed = 1;
   }
 }
@@ -191,20 +196,23 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    #if 0
-    wait_for_button_press();
-    TextLCD_PutChar(&lcd, c+ASCII_CAPITAL_OFFSET);
-    c = (c+1) % LETTERS_TOTAL;
+    #if 1
+    //wait_for_button_press();
     #endif
 
 
     if(elapsed){
+      if (c < 6){
+         TextLCD_Position(&lcd, c, 0);
+         TextLCD_PutChar(&lcd, c+ASCII_CAPITAL_OFFSET);
+         c = (c+1) % LETTERS_TOTAL;
+      }
       elapsed = 0;
       cd_tick(&clock);
       uart_print_cd(&huart2, &clock);
       char str[256];
       sprintf(str,"%02d:%02d:%02d",clock.hrs, clock.min, clock.sec);
-      TextLCD_Home(&lcd);
+      TextLCD_Position(&lcd, 8, 1);
       TextLCD_PutStr(&lcd, str);
 
     }

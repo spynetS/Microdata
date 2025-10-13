@@ -71,7 +71,7 @@ static void MX_TIM2_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-#define ADC_BUF_SIZE 2
+#define ADC_BUF_SIZE 4
 uint16_t adc_buffert[ADC_BUF_SIZE];
 int adc_buf_ix = 0;
 int adc_ready = 0;
@@ -170,7 +170,9 @@ int main(void)
   HAL_ADC_Start_IT(&hadc1);
   adc_buffert[0]=0;
   adc_buffert[1]=0;
-  uart_print("Hello world2\n\r");
+  adc_buffert[2]=0;
+
+  uart_print("Hel\lo world2\n\r");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -181,15 +183,24 @@ int main(void)
     if (adc_ready) {
     	//TextLCD_Clear(&hlcd);
     	char str[32];
-    	sprintf(str, "%0.2fx", normalize_12bit_posneg(adc_buffert[JOY_X_IX]));
+    	sprintf(str, "%0.2fx ", normalize_12bit_posneg(adc_buffert[JOY_X_IX]));
     	TextLCD_Position(&hlcd, 0, 0);
     	TextLCD_PutStr(&hlcd, str);
-    	memset(str,'\0',sizeof(char)*32);
 
-    	sprintf(str, "%0.2fy", normalize_12bit_posneg(adc_buffert[JOY_Y_IX]));
+    	memset(str,'\0',sizeof(char)*32);
+    	sprintf(str, "%0.2fy ", normalize_12bit_posneg(adc_buffert[JOY_Y_IX]));
     	TextLCD_Position(&hlcd, 0, 1);
     	TextLCD_PutStr(&hlcd, str);
 
+    	memset(str,'\0',sizeof(char)*32);
+    	sprintf(str, "%uC", (adc_buffert[LM35_IX]));
+    	TextLCD_Position(&hlcd, 8, 0);
+    	TextLCD_PutStr(&hlcd, str);
+
+    	memset(str,'\0',sizeof(char)*32);
+    	sprintf(str, "%u", (adc_buffert[3]));
+    	TextLCD_Position(&hlcd, 8, 1);
+    	TextLCD_PutStr(&hlcd, str);
 
         adc_ready = 0;
     }
@@ -277,7 +288,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.ContinuousConvMode = ENABLE;
-  hadc1.Init.NbrOfConversion = 2;
+  hadc1.Init.NbrOfConversion = 4;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -306,6 +317,24 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_2;
   sConfig.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_3;
+  sConfig.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_4;
+  sConfig.Rank = ADC_REGULAR_RANK_4;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();

@@ -1,16 +1,20 @@
 #MicroXplorer Configuration settings - do not modify
 ADC1.Channel-4\#ChannelRegularConversion=ADC_CHANNEL_1
+ADC1.Channel-7\#ChannelRegularConversion=ADC_CHANNEL_2
 ADC1.ClockPrescaler=ADC_CLOCK_ASYNC_DIV4
 ADC1.CommonPathInternal=null|null|null|null
 ADC1.ContinuousConvMode=ENABLE
 ADC1.EOCSelection=ADC_EOC_SINGLE_CONV
 ADC1.ExternalTrigConv=ADC_SOFTWARE_START
-ADC1.IPParameters=Rank-4\#ChannelRegularConversion,Channel-4\#ChannelRegularConversion,SamplingTime-4\#ChannelRegularConversion,OffsetNumber-4\#ChannelRegularConversion,NbrOfConversionFlag,ContinuousConvMode,NbrOfConversion,EOCSelection,ClockPrescaler,ExternalTrigConv,master,CommonPathInternal
-ADC1.NbrOfConversion=1
+ADC1.IPParameters=Rank-4\#ChannelRegularConversion,Channel-4\#ChannelRegularConversion,SamplingTime-4\#ChannelRegularConversion,OffsetNumber-4\#ChannelRegularConversion,NbrOfConversionFlag,ContinuousConvMode,NbrOfConversion,EOCSelection,ClockPrescaler,ExternalTrigConv,master,Rank-7\#ChannelRegularConversion,Channel-7\#ChannelRegularConversion,SamplingTime-7\#ChannelRegularConversion,OffsetNumber-7\#ChannelRegularConversion,CommonPathInternal
+ADC1.NbrOfConversion=2
 ADC1.NbrOfConversionFlag=1
 ADC1.OffsetNumber-4\#ChannelRegularConversion=ADC_OFFSET_NONE
+ADC1.OffsetNumber-7\#ChannelRegularConversion=ADC_OFFSET_NONE
 ADC1.Rank-4\#ChannelRegularConversion=1
+ADC1.Rank-7\#ChannelRegularConversion=2
 ADC1.SamplingTime-4\#ChannelRegularConversion=ADC_SAMPLETIME_640CYCLES_5
+ADC1.SamplingTime-7\#ChannelRegularConversion=ADC_SAMPLETIME_640CYCLES_5
 ADC1.master=1
 CAD.formats=
 CAD.pinconfig=

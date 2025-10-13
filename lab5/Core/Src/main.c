@@ -23,11 +23,15 @@
 /* USER CODE BEGIN Includes */
 #include "lcd.h"
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+#define JOY_X_IX 0
+#define JOY_Y_IX 1
+#define LM35_IX 2
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -67,7 +71,7 @@ static void MX_TIM2_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-#define ADC_BUF_SIZE 1
+#define ADC_BUF_SIZE 2
 uint16_t adc_buffert[ADC_BUF_SIZE];
 int adc_buf_ix = 0;
 int adc_ready = 0;
@@ -78,15 +82,25 @@ void uart_print(const char* str){
 #if 1
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
-    if (hadc->Instance == ADC1)
+#if 1
+    if (hadc->Instance == ADC1 && hadc1.Instance->ISR & ADC_FLAG_RDY)
     {
+
+
         uint32_t value = HAL_ADC_GetValue(hadc);
-        if (adc_buf_ix < ADC_BUF_SIZE)
-            adc_buffert[adc_buf_ix++] = value;
-        else
+#if 1
+        adc_buffert[adc_buf_ix] = value;
+    	adc_buf_ix++;
+
+        if (adc_buf_ix >= ADC_BUF_SIZE){
+        	adc_ready = 1;
         	adc_buf_ix = 0;
-        adc_ready = 1;
+
+        }
+#endif
+
     }
+#endif
 }
 
 #endif
@@ -156,8 +170,7 @@ int main(void)
   HAL_ADC_Start_IT(&hadc1);
   adc_buffert[0]=0;
   adc_buffert[1]=0;
-
-	//uart_print("Hello world2\n\r");
+  uart_print("Hello world2\n\r");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -166,16 +179,20 @@ int main(void)
   {
 
     if (adc_ready) {
+    	//TextLCD_Clear(&hlcd);
+    	char str[32];
+    	sprintf(str, "%0.2fx", normalize_12bit_posneg(adc_buffert[JOY_X_IX]));
+    	TextLCD_Position(&hlcd, 0, 0);
+    	TextLCD_PutStr(&hlcd, str);
+    	memset(str,'\0',sizeof(char)*32);
 
-        uint16_t value = adc_buffert[0];
-        char str[32];
-        sprintf(str, "%0.2f %0.2f %u", normalize_12bit(value), normalize_12bit_posneg(value), value);
-        TextLCD_Position(&hlcd, 0, 0);
-        TextLCD_PutStr(&hlcd, str);
+    	sprintf(str, "%0.2fy", normalize_12bit_posneg(adc_buffert[JOY_Y_IX]));
+    	TextLCD_Position(&hlcd, 0, 1);
+    	TextLCD_PutStr(&hlcd, str);
+
 
         adc_ready = 0;
     }
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -256,11 +273,11 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.ContinuousConvMode = ENABLE;
-  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.NbrOfConversion = 2;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -280,6 +297,15 @@ static void MX_ADC1_Init(void)
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_2;
+  sConfig.Rank = ADC_REGULAR_RANK_2;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -484,6 +510,7 @@ static void MX_GPIO_Init(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
+	uart_print("ERROR");
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)

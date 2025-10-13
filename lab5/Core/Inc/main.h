@@ -41,6 +41,7 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
+void uart_print(const char* str);
 
 /* USER CODE END EC */
 

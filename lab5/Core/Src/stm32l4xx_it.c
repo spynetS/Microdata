@@ -69,7 +69,7 @@ extern ADC_HandleTypeDef hadc1;
 void NMI_Handler(void)
 {
   /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
-
+	uart_print("NMI ERROR\n\r");
   /* USER CODE END NonMaskableInt_IRQn 0 */
   /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
    while (1)
@@ -84,7 +84,7 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+	uart_print("hard fault\n\r");
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {

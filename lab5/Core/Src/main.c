@@ -172,7 +172,7 @@ int main(void)
   adc_buffert[1]=0;
   adc_buffert[2]=0;
 
-  uart_print("Hel\lo world2\n\r");
+  uart_print("Hello world2\n\r");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -188,18 +188,18 @@ int main(void)
     	TextLCD_PutStr(&hlcd, str);
 
     	memset(str,'\0',sizeof(char)*32);
-    	sprintf(str, "%0.2fy ", normalize_12bit_posneg(adc_buffert[JOY_Y_IX]));
+    	sprintf(str, "%0.2fy ", normalize_12bit(adc_buffert[JOY_Y_IX]));
     	TextLCD_Position(&hlcd, 0, 1);
     	TextLCD_PutStr(&hlcd, str);
 
     	memset(str,'\0',sizeof(char)*32);
-    	sprintf(str, "%uC", (adc_buffert[LM35_IX]));
+    	sprintf(str, "%uC ", (adc_buffert[LM35_IX]));
     	TextLCD_Position(&hlcd, 8, 0);
-    	TextLCD_PutStr(&hlcd, str);
+    	//TextLCD_PutStr(&hlcd, str);
 
     	memset(str,'\0',sizeof(char)*32);
-    	sprintf(str, "%u", (adc_buffert[3]));
-    	TextLCD_Position(&hlcd, 8, 1);
+    	sprintf(str, "%0.2fL ", normalize_12bit(adc_buffert[3]));
+    	TextLCD_Position(&hlcd, 11, 1);
     	TextLCD_PutStr(&hlcd, str);
 
         adc_ready = 0;

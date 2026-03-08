@@ -47,6 +47,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+
 TIM_HandleTypeDef htim1;
 
 UART_HandleTypeDef huart2;
@@ -60,6 +62,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 float rf = 0;
 float bf = 0;
@@ -72,6 +75,25 @@ float gf = 0;
 
 uint16_t isr_count = 0;
 uint32_t last = 0;
+
+#define ADC_BUF_SIZE 2
+uint16_t adc_buffert[ADC_BUF_SIZE];
+int adc_buf_ix = 0;
+int adc_ready = 0;
+
+
+void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc ){
+	if(hadc->Instance == ADC1){
+	       uint32_t value = HAL_ADC_GetValue(hadc);
+	        adc_buffert[adc_buf_ix] = value;
+	    	adc_buf_ix++;
+	        if (adc_buf_ix >= ADC_BUF_SIZE){
+	        	adc_ready = 1;
+	        	adc_buf_ix = 0;
+	        }
+	}
+}
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 	if( htim->Instance == TIM1 ){
@@ -113,6 +135,7 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_TIM1_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
@@ -120,6 +143,7 @@ int main(void)
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 
   HAL_TIM_Base_Start_IT(&htim1);
+  HAL_ADC_Start_IT(&hadc1);
 
   //TIM1->CCR2 = 128;
   //TIM1->CCR3 = 128;
@@ -140,9 +164,16 @@ int main(void)
 		bf = (bf + 1.0) * half_arr * 0.4f;
 		t += 0.000051;
 
-	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,(uint32_t) bf);
-	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,(uint32_t) rf);
-	  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,(uint32_t) gf);
+		if(adc_ready){
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,(uint32_t) ((adc_buffert[0]*255)/4095)*1.2);
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,(uint32_t) ((adc_buffert[1]*255)/4095)*1.2);
+				uint32_t mean = (adc_buffert[0]+adc_buffert[1])/2;
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,(uint32_t) ((mean*255)/4095)*1.2);
+
+		}
+
+	  //__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,(uint32_t) rf);
+	  //__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,(uint32_t) gf);
 
 
 
@@ -203,6 +234,73 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+
+  /** Common config
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.LowPowerAutoWait = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.NbrOfConversion = 2;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc1.Init.OversamplingMode = DISABLE;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_640CYCLES_5;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_2;
+  sConfig.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
 }
 
 /**

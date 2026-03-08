@@ -95,7 +95,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
         if (adc_buf_ix >= ADC_BUF_SIZE){
         	adc_ready = 1;
         	adc_buf_ix = 0;
-
         }
 #endif
 
@@ -165,6 +164,8 @@ int main(void)
   //uart_print("Hello world1\n\r");
 
   TextLCDType hlcd;
+
+  HAL_GPIO_WritePin(GPIOx, GPIO_Pin, PinState)
 
   TextLCD_Init(&hlcd, &hi2c1, 0x4e);
   HAL_ADC_Start_IT(&hadc1);
